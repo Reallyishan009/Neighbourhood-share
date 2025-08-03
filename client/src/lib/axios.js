@@ -2,7 +2,7 @@ import axios from 'axios'
 
 
 const apiClient = axios.create({
-     baseURL : "http://localhost:500/api",
+     baseURL : "https://neighbourhood-share-eight.vercel/api",
      timeout : 10000,
      headers : {
         'Content-Type' : 'application/json',
