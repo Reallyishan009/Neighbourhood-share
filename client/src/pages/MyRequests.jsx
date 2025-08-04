@@ -103,15 +103,15 @@ const MyRequests = () => {
                     </Badge>
 
                     {request.status === "pending" && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancelRequest(request.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Cancel
-                      </Button>
-                    )}
+  <Button
+    onClick={() => handleCancelRequest(request.id)}
+    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+  >
+    <Trash2 className="h-4 w-4" />
+    Cancel
+  </Button>
+)}
+
                   </div>
                 </div>
               </CardContent>
