@@ -1,41 +1,43 @@
 import apiClient from "@/lib/axios";
 
+// Items API
 export const getAllItems = async () => {
-  try {
-    const response = await apiClient.get("/items");
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching items:", error);
-    throw error;
-  }
+  const { data } = await apiClient.get("/items");
+  return data;
 };
 
 export const getItemById = async (id) => {
-  try {
-    const response = await apiClient.get(`/items/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching item:", error);
-    throw error;
-  }
+  const { data } = await apiClient.get(`/items/${id}`);
+  return data;
 };
 
 export const addItem = async (itemData) => {
-  try {
-    const response = await apiClient.post("/items", itemData);
-    return response.data;
-  } catch (error) {
-    console.error("Error adding item:", error);
-    throw error;
-  }
+  const { data } = await apiClient.post("/items", itemData);
+  return data;
 };
 
 export const requestBorrow = async (itemId, userData) => {
-  try {
-    const response = await apiClient.post(`/items/${itemId}/request`, userData);
-    return response.data;
-  } catch (error) {
-    console.error("Error requesting item:", error);
-    throw error;
-  }
+  const { data } = await apiClient.post(`/items/${itemId}/request`, userData);
+  return data;
+};
+
+// Bonus APIs
+export const getMyRequests = async () => {
+  const { data } = await apiClient.get("/my-requests");
+  return data;
+};
+
+export const cancelRequest = async (requestId) => {
+  const { data } = await apiClient.delete(`/my-requests/${requestId}`);
+  return data;
+};
+
+export const getMapItems = async () => {
+  const { data } = await apiClient.get("/map-items");
+  return data;
+};
+
+export const getTrustScore = async (userId) => {
+  const { data } = await apiClient.get(`/trust-score/${userId}`);
+  return data;
 };

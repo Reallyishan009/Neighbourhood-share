@@ -1,65 +1,63 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, User, MapPin, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, User, MapPin, Calendar, Star } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getItemById, requestBorrow } from "@/api/items";
 
 const ItemDetails = () => {
-  const [item, setItem] = useState({
-    id: "itm001",
-    name: "Cordless Drill",
-    description:
-      "18V cordless drill, lightly used. Perfect for home projects and DIY tasks.",
-    category: "Tools",
-    owner: "Alice Johnson",
-    condition: "Good",
-    available: true,
-    image:
-      "https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop",
-    borrowedBy: null,
-    location: {
-      lat: 28.4595,
-      lng: 77.0266,
-      address: "Block A, Sector 45",
-    },
-  });
-
-  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
 
-  // TODO: Implement API integration
   const fetchItem = async () => {
-  try {
-    setLoading(true);
-    const response = await apiClient.get(`/items/${id}`);
-    setItem(response.data);
-  } catch (error) {
-    console.error("Failed to load item:", error);
-    toast.error("Failed to load item details");
-  } finally {
-    setLoading(false);  
-  }
-};
+    try {
+      setLoading(true);
+      const data = await getItemById(id);
+      setItem(data);
+    } catch (err) {
+      toast.error("Item not found");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // TODO: Implement API integration
-  const handleRequestBorrow = async () => {};
+  const handleRequestBorrow = async () => {
+    try {
+      setRequesting(true);
+      await requestBorrow(item.id, { userId: "usr123" });
+      toast.success("Request sent successfully! 🎉");
+      fetchItem();
+    } catch (err) {
+      toast.error("Could not send request");
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItem();
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading item details...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-purple-50/50">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-4xl mx-auto">
+            <div className="skeleton h-8 w-32 mb-8" />
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="skeleton aspect-video rounded-2xl" />
+              <div className="space-y-4">
+                <div className="skeleton h-8 w-3/4" />
+                <div className="skeleton h-4 w-1/2" />
+                <div className="skeleton h-24 w-full" />
+                <div className="skeleton h-12 w-full" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -67,148 +65,123 @@ const ItemDetails = () => {
 
   if (!item) {
     return (
-      <div className="text-center py-12">
-        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Item not found</h3>
-        <p className="text-muted-foreground mb-4">
-          The item you're looking for doesn't exist
-        </p>
-        <Button asChild>
-          <Link to="/">Back to Home</Link>
-        </Button>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center space-y-4">
+            <div className="text-6xl mb-4">😞</div>
+            <h2 className="text-2xl font-bold">Item Not Found</h2>
+            <p className="text-muted-foreground">The item you're looking for doesn't exist.</p>
+            <Button asChild className="btn-gradient">
+              <Link to="/">Back to Home</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Back Button */}
-      <Button variant="ghost" asChild className="mb-4">
-        <Link to="/">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Items
-        </Link>
-      </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-purple-50/50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Back button */}
+          <Button asChild variant="ghost" className="mb-6 hover:bg-white/50">
+            <Link to="/" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Items
+            </Link>
+          </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Image */}
-        <div className="space-y-4">
-          <div className="aspect-square rounded-lg overflow-hidden border">
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src =
-                  "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop";
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Details */}
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-start justify-between mb-2">
-              <h1 className="text-3xl font-bold">{item.name}</h1>
-              <Badge
-                variant={item.available ? "default" : "secondary"}
-                className="text-sm"
-              >
-                {item.available ? "Available" : "Borrowed"}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground text-lg">{item.description}</p>
-          </div>
-
-          <Separator />
-
-          {/* Item Info */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline">{item.category}</Badge>
-              <Badge variant="outline">{item.condition}</Badge>
+          {/* Main content */}
+          <div className="grid gap-8 lg:grid-cols-2 animate-fade-in">
+            {/* Image */}
+            <div className="relative">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full aspect-video object-cover rounded-2xl shadow-lg"
+              />
+              <div className="absolute top-4 right-4">
+                <Badge 
+                  variant={item.available ? "success" : "secondary"}
+                  className={`shadow-lg text-sm px-3 py-1 ${
+                    item.available ? "badge-available" : "badge-borrowed"
+                  }`}
+                >
+                  {item.available ? "Available" : "Borrowed"}
+                </Badge>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Owner</p>
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="text-xs">
-                        {item.owner
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{item.owner}</span>
-                  </div>
-                </div>
+            {/* Details */}
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{item.name}</h1>
+                <Badge variant="outline" className="mb-4">
+                  {item.category}
+                </Badge>
+                <p className="text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
               </div>
 
-              {item.location && (
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.location.address}
-                    </p>
+              {/* Owner info */}
+              <Card className="bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                      {item.owner.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Owned by {item.owner}</h3>
+                      <div className="flex items-center text-sm text-muted-foreground mt-1">
+                        <Star className="h-4 w-4 mr-1 text-yellow-500" />
+                        <span>4.8 rating • Trusted neighbor</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+
+              {/* Item condition */}
+              <div className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Condition:</span>
+                <Badge variant="outline">{item.condition}</Badge>
+              </div>
+
+              {/* Borrowed by info */}
+              {item.borrowedBy && (
+                <Card className="border-yellow-200 bg-yellow-50/50 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <p className="text-sm">
+                      <strong>Currently borrowed by:</strong> {item.borrowedBy}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
-              {!item.available && item.borrowedBy && (
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Currently Borrowed By</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.borrowedBy}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Action Buttons */}
-          <div className="space-y-4">
-            {item.available ? (
-              <div className="space-y-3">
+              {/* Action button */}
+              {item.available ? (
                 <Button
                   onClick={handleRequestBorrow}
                   disabled={requesting}
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-12 text-lg btn-gradient shadow-lg hover:shadow-xl"
                 >
-                  {requesting ? "Requesting..." : "Request to Borrow"}
+                  {requesting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Sending Request...
+                    </div>
+                  ) : (
+                    `Request to Borrow from ${item.owner}`
+                  )}
                 </Button>
-                <p className="text-sm text-muted-foreground text-center">
-                  Click to request borrowing this item from {item.owner}
-                </p>
-              </div>
-            ) : (
-              <Card className="bg-muted/50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Item Unavailable</CardTitle>
-                  <CardDescription>
-                    This item is currently borrowed by {item.borrowedBy}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full" disabled>
-                    Currently Borrowed
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+              ) : (
+                <Button disabled className="w-full h-12 text-lg">
+                  Currently Unavailable
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

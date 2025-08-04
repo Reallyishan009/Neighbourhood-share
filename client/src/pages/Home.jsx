@@ -1,197 +1,280 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Grid, List, Package } from "lucide-react";
+import { Search, Grid, List, Filter, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import ItemCard from "@/components/ItemCard";
-import { getAllItems } from "@/api/items";
-
-// Placeholder data - this will be replaced with API calls during the workshop
-
+import { getAllItems, requestBorrow } from "@/api/items";
+import { toast } from "sonner";
 
 const Home = () => {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true); // No loading needed for placeholder data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const itemsPerPage = 6;
   const categories = ["Tools", "Kitchen", "Outdoors", "Fitness", "Games"];
 
-  // Filtering/searching/sorting logic in frontend
   const filteredItems = useMemo(() => {
     let filtered = [...items];
+
     if (searchTerm) {
       filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (i) =>
+          i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          i.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (categoryFilter && categoryFilter !== "all") {
-      filtered = filtered.filter((item) => item.category === categoryFilter);
+
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((i) => i.category === categoryFilter);
     }
-    if (availabilityFilter && availabilityFilter !== "all") {
-      filtered = filtered.filter(
-        (item) => String(item.available) === availabilityFilter
-      );
+
+    if (availabilityFilter !== "all") {
+      filtered = filtered.filter((i) => String(i.available) === availabilityFilter);
     }
-    // Optionally, sort by name
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-    return filtered;
+
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
   }, [items, searchTerm, categoryFilter, availabilityFilter]);
 
-  // TODO: Implement API integration
-  const handleRequestBorrow = async (itemId) => {
-  };
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  // axios instance:
-    //item base api
-    // TODO: Implement API integration during workshop
   const fetchItems = async () => {
-      try {
-        const  items = await getAllItems();
-        setItems(items);
-      } catch (error) {
-        console.error("Failed  to load")
-        toast.error("something went wrong")
-      } finally {
-        setLoading(false)
-      }
+    try {
+      setLoading(true);
+      const data = await getAllItems();
+      setItems(data);
+    } catch (err) {
+      setError("Failed to load items");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(()=>{
-    fetchItems()
-  },[]);
+  const handleRequestBorrow = async (itemId) => {
+    try {
+      await requestBorrow(itemId, { userId: "usr123" });
+      toast.success("Request sent successfully! 🎉");
+      fetchItems();
+    } catch (err) {
+      toast.error("Could not send request");
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading items...</p>
+      <div className="min-h-screen hero-gradient">
+        <div className="container mx-auto px-6 py-32 relative z-10">
+          <div className="flex flex-col items-center justify-center space-y-8">
+            <div className="relative">
+              <div className="h-20 w-20 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+              <Sparkles className="absolute top-1/2 left-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-blue-600 animate-pulse" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="heading-classic text-2xl text-slate-900">Loading Amazing Items</h2>
+              <p className="text-elegant">Discovering treasures in your neighborhood...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen hero-gradient">
+        <div className="container mx-auto px-6 py-32 relative z-10">
+          <div className="text-center space-y-6">
+            <div className="text-6xl mb-4">😞</div>
+            <h2 className="heading-classic text-3xl text-slate-900">Oops! Something went wrong</h2>
+            <p className="text-elegant text-lg max-w-md mx-auto">{error}</p>
+            <Button onClick={fetchItems} className="btn-elegant">
+              Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold">Neighborhood Items</h1>
-          <p className="text-muted-foreground">
-            Discover and borrow items from your neighbors
+    <div className="min-h-screen hero-gradient">
+      <div className="container mx-auto px-6 py-12 relative z-10">
+        {/* Elegant Hero Section */}
+        <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <TrendingUp className="h-4 w-4" />
+            <span>Join 2,500+ neighbors sharing resources</span>
+          </div>
+          
+          <h1 className="heading-classic text-5xl md:text-7xl mb-6 text-slate-900">
+            Share the{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Abundance
+            </span>
+          </h1>
+          
+          <p className="text-elegant text-xl max-w-3xl mx-auto leading-relaxed">
+            Transform your neighborhood into a thriving community where sharing creates abundance. 
+            Discover amazing items nearby, lend what you don't need, and borrow what you do.
           </p>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        {/* Refined Search Section */}
+        <div className="card-elegant p-8 mb-12 animate-slide-up">
+          <div className="flex flex-wrap gap-6">
+            <div className="relative flex-1 min-w-[320px]">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search for anything..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-classic pl-12 h-14 text-lg"
+              />
+            </div>
 
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="input-classic w-48 h-14">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+              <SelectTrigger className="input-classic w-40 h-14">
+                <SelectValue placeholder="All Items" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Items</SelectItem>
+                <SelectItem value="true">Available</SelectItem>
+                <SelectItem value="false">Borrowed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="lg"
+                onClick={() => setViewMode("grid")}
+                className={viewMode === "grid" ? "btn-classic" : "btn-outline-classic"}
+              >
+                <Grid className="h-5 w-5" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="lg"
+                onClick={() => setViewMode("list")}
+                className={viewMode === "list" ? "btn-classic" : "btn-outline-classic"}
+              >
+                <List className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="space-y-1">
+            <h2 className="heading-classic text-2xl text-slate-900">
+              Available Items
+            </h2>
+            <p className="text-elegant">
+              {filteredItems.length} wonderful item{filteredItems.length !== 1 ? 's' : ''} waiting to be shared
+            </p>
+          </div>
+        </div>
+
+        {/* Cards Container - Side by Side Layout */}
+        {paginatedItems.length === 0 ? (
+          <div className="card-elegant p-16 text-center">
+            <div className="text-8xl mb-6">🔍</div>
+            <h3 className="heading-classic text-2xl mb-4 text-slate-900">No Items Found</h3>
+            <p className="text-elegant text-lg mb-8 max-w-md mx-auto">
+              We couldn't find any items matching your search. Try adjusting your filters or explore different categories.
+            </p>
+            <Button 
+              onClick={() => {
+                setSearchTerm("");
+                setCategoryFilter("all");
+                setAvailabilityFilter("all");
+              }}
+              className="btn-elegant"
+            >
+              Clear All Filters
+            </Button>
+          </div>
+        ) : (
+          /* UPDATED: Cards Side by Side Layout */
+          <div className="flex flex-wrap justify-center gap-6 mb-16">
+            {paginatedItems.map((item, index) => (
+              <div
+                key={item.id}
+                className="w-80 animate-scale-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <ItemCard item={item} onRequestBorrow={handleRequestBorrow} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Elegant Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-6">
+            <Button
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="btn-outline-classic"
+            >
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-3">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  className={cn(
+                    "w-12 h-12 rounded-xl font-semibold",
+                    currentPage === page ? "btn-classic" : "btn-outline-classic"
+                  )}
+                >
+                  {page}
+                </Button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
 
-          <Select
-            value={availabilityFilter}
-            onValueChange={setAvailabilityFilter}
-          >
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Items" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Items</SelectItem>
-              <SelectItem value="true">Available</SelectItem>
-              <SelectItem value="false">Borrowed</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex border rounded-md">
             <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="btn-outline-classic"
             >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
+              Next
             </Button>
           </div>
-        </div>
+        )}
       </div>
-
-      <Separator />
-
-      {/* Items Grid/List */}
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-12">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No items found</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search or filters
-          </p>
-          <Button
-            onClick={() => {
-              setSearchTerm("");
-              setCategoryFilter("all");
-              setAvailabilityFilter("all");
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
-      ) : (
-        <div
-          className={
-            viewMode === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              : "space-y-4"
-          }
-        >
-          {filteredItems.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              viewMode={viewMode}
-              onRequest={handleRequestBorrow}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 };

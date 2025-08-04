@@ -1,26 +1,36 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
+  SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { addItem } from "@/api/items";
+
+const categories = [
+  "Tools",
+  "Kitchen",
+  "Outdoors",
+  "Fitness",
+  "Games",
+  "Electronics",
+  "Books",
+  "Other"
+];
+const conditions = ["Like New", "Excellent", "Very Good", "Good", "Fair"];
 
 const AddItem = () => {
   const navigate = useNavigate();
@@ -30,129 +40,104 @@ const AddItem = () => {
     description: "",
     category: "",
     condition: "",
-    image: "",
+    image: ""
   });
 
-  const categories = [
-    "Tools",
-    "Kitchen",
-    "Outdoors",
-    "Fitness",
-    "Games",
-    "Electronics",
-    "Books",
-    "Other",
-  ];
-  const conditions = [
-    "Like New",
-    "Excellent",
-    "Very Good",
-    "Good",
-    "Fair",
-    "Poor",
-  ];
+  const handleChange = (field) => (e) =>
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const validateForm = () => {
+    const { name, description, category, condition } = formData;
+    if (!name || !description || !category || !condition) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+    return true;
   };
 
-  // TODO: Implement API integration
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      await addItem(formData);
+      toast.success("Item added!");
+      navigate("/");
+    } catch (err) {
+      toast.error("Failed to add item");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Add New Item</h1>
-        <p className="text-muted-foreground">
-          Share an item with your neighborhood
-        </p>
-      </div>
-
-      <Separator />
-
-      {/* Form */}
-      <Card className="py-4">
+    <div className="container mx-auto px-4 py-8 max-w-xl">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <span>Item Information</span>
-          </CardTitle>
+          <CardTitle>Add New Item</CardTitle>
           <CardDescription>
-            Fill in the details about the item you want to share
+            Share an item with your neighborhood
           </CardDescription>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Item Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Item Name *</Label>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-1">
+              <label>Name *</label>
               <Input
-                id="name"
-                placeholder="e.g., Cordless Drill, Camping Tent"
                 value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                required
+                onChange={handleChange("name")}
+                placeholder="Cordless Drill"
               />
             </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+            <div className="space-y-1">
+              <label>Description *</label>
               <Textarea
-                id="description"
-                placeholder="Describe your item, its features, and any important details..."
                 value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                rows={4}
-                required
+                onChange={handleChange("description")}
+                placeholder="18 V cordless drill, lightly used…"
               />
             </div>
 
-            {/* Category and Condition */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+            <div className="flex gap-4">
+              <div className="flex-1 space-y-1">
+                <label>Category *</label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) =>
-                    handleInputChange("category", value)
+                  onValueChange={(val) =>
+                    setFormData((p) => ({ ...p, category: val }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="condition">Condition *</Label>
+              <div className="flex-1 space-y-1">
+                <label>Condition *</label>
                 <Select
                   value={formData.condition}
-                  onValueChange={(value) =>
-                    handleInputChange("condition", value)
+                  onValueChange={(val) =>
+                    setFormData((p) => ({ ...p, condition: val }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select condition" />
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {conditions.map((condition) => (
-                      <SelectItem key={condition} value={condition}>
-                        {condition}
+                    {conditions.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -160,59 +145,18 @@ const AddItem = () => {
               </div>
             </div>
 
-            {/* Image URL */}
-            <div className="space-y-2">
-              <Label htmlFor="image">Image URL (Optional)</Label>
-              <div className="relative">
-                <Upload className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  id="image"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.image}
-                  onChange={(e) => handleInputChange("image", e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Provide a URL to an image of your item. If left empty, a default
-                image will be used.
-              </p>
+            <div className="space-y-1">
+              <label>Image URL (optional)</label>
+              <Input
+                value={formData.image}
+                onChange={handleChange("image")}
+                placeholder="https://…"
+              />
             </div>
 
-            {/* Preview */}
-            {formData.image && (
-              <div className="space-y-2">
-                <Label>Image Preview</Label>
-                <div className="aspect-video rounded-lg overflow-hidden border">
-                  <img
-                    src={formData.image}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop";
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Submit Button */}
-            <div className="flex space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? "Adding..." : "Add Item"}
-              </Button>
-            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Submitting…" : "Add Item"}
+            </Button>
           </form>
         </CardContent>
       </Card>
