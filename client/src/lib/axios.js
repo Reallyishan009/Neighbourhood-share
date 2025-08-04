@@ -6,7 +6,7 @@ import axios from "axios";
  * Change the baseURL only if your backend runs on a different host/port.
  */
 const apiClient = axios.create({
-  baseURL: "http://localhost:500/api", // ⬅️ use http, port 500
+  baseURL: "https://neighbourhood-backend-theta.vercel.app/api", // ⬅️ use http, port 500
   timeout: 10_000,
   headers: {
     "Content-Type": "application/json",
