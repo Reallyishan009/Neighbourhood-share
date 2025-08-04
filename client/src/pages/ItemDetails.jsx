@@ -38,7 +38,18 @@ const ItemDetails = () => {
   const [requesting, setRequesting] = useState(false);
 
   // TODO: Implement API integration
-  const fetchItem = async () => {};
+  const fetchItem = async () => {
+  try {
+    setLoading(true);
+    const response = await apiClient.get(`/items/${id}`);
+    setItem(response.data);
+  } catch (error) {
+    console.error("Failed to load item:", error);
+    toast.error("Failed to load item details");
+  } finally {
+    setLoading(false);  
+  }
+};
 
   // TODO: Implement API integration
   const handleRequestBorrow = async () => {};
