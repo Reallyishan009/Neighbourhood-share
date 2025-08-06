@@ -2,6 +2,8 @@
 
 A full-stack web application that allows neighbors to share and borrow items within their community. Built with React (frontend) and Node.js/Express (backend).
 
+- Full project line: [https://neighbourhood-frontend-theta.vercel.app]
+
 - Front-end (React + Vite)
 [https://neighbourhood-frontend-theta.vercel.app]
 
