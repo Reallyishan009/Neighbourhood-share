@@ -5,30 +5,22 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enhanced CORS configuration
+// Enhanced CORS configuration - Allow all origins for now
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://neighbourhood-frontend-theta.vercel.app']
-    : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+// Use express built-in parsers instead of body-parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
 });
 
 // Enhanced mock data with more realistic information
@@ -183,8 +175,19 @@ app.get("/", (req, res) => {
     message: "🏘️ Neighborhood Sharing API is running!",
     version: "1.0.0",
     status: "healthy",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    itemsCount: items.length
   });
+});
+
+// Simple items endpoint for testing
+app.get("/api/items/simple", (req, res) => {
+  try {
+    res.json(items);
+  } catch (error) {
+    console.error('Error in simple items endpoint:', error);
+    res.status(500).json({ error: "Failed to fetch items" });
+  }
 });
 
 app.get("/api", (req, res) => {
@@ -260,26 +263,35 @@ app.get("/api/items", (req, res) => {
       }
     }
     
-    // Pagination
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    // Check if client wants paginated response
+    const wantsPagination = req.query.page || req.query.limit;
     
-    const paginatedItems = filteredItems.slice(startIndex, endIndex);
-    
-    res.json({
-      items: paginatedItems,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(filteredItems.length / limit),
-        totalItems: filteredItems.length,
-        hasNext: endIndex < filteredItems.length,
-        hasPrev: startIndex > 0
-      }
-    });
+    if (wantsPagination) {
+      // Pagination
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      
+      const paginatedItems = filteredItems.slice(startIndex, endIndex);
+      
+      res.json({
+        items: paginatedItems,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(filteredItems.length / limit),
+          totalItems: filteredItems.length,
+          hasNext: endIndex < filteredItems.length,
+          hasPrev: startIndex > 0
+        }
+      });
+    } else {
+      // Return simple array for backward compatibility
+      res.json(filteredItems);
+    }
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch items" });
+    console.error('Error in /api/items:', error);
+    res.status(500).json({ error: "Failed to fetch items", details: error.message });
   }
 });
 
@@ -459,6 +471,15 @@ app.use("/api/*", (req, res) => {
     error: "API endpoint not found",
     path: req.path,
     method: req.method
+  });
+});
+
+// Global error handling middleware (must be last)
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
 });
 

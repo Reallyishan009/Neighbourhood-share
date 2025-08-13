@@ -60,12 +60,23 @@ const Home = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
+      setError(""); // Clear any previous errors
       const response = await getAllItems();
+      console.log('API Response:', response); // Debug log
+      
       // Handle both old and new API response formats
       const itemsData = response.items || response;
-      setItems(itemsData);
+      console.log('Items Data:', itemsData); // Debug log
+      
+      if (Array.isArray(itemsData)) {
+        setItems(itemsData);
+      } else {
+        console.error('Invalid items data format:', itemsData);
+        setError("Invalid data format received from server");
+      }
     } catch (err) {
-      setError("Failed to load items");
+      console.error('Error fetching items:', err);
+      setError(`Failed to load items: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
