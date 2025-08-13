@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Neighborhood Sharing API Test</h1>
+    
+    <button onclick="testAPI()">Test API Connection</button>
+    <button onclick="testItems()">Test Items Endpoint</button>
+    <button onclick="testSimpleItems()">Test Simple Items</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'https://neighbourhood-backend-theta.vercel.app';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function testAPI() {
+            try {
+                log('Testing API connection...');
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                log(`API Response: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                log(`API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testItems() {
+            try {
+                log('Testing items endpoint...');
+                const response = await fetch(`${API_BASE}/api/items`);
+                const data = await response.json();
+                log(`Items Response: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                log(`Items Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSimpleItems() {
+            try {
+                log('Testing simple items endpoint...');
+                const response = await fetch(`${API_BASE}/api/items/simple`);
+                const data = await response.json();
+                log(`Simple Items Response: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                log(`Simple Items Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
