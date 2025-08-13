@@ -2,10 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { Search, Grid, List, Filter, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import ItemCard from "@/components/ItemCard";
 import { getAllItems, requestBorrow } from "@/api/items";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const Home = () => {
   const [items, setItems] = useState([]);
@@ -16,7 +23,7 @@ const Home = () => {
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const itemsPerPage = 6;
   const categories = ["Tools", "Kitchen", "Outdoors", "Fitness", "Games"];
 
@@ -36,7 +43,9 @@ const Home = () => {
     }
 
     if (availabilityFilter !== "all") {
-      filtered = filtered.filter((i) => String(i.available) === availabilityFilter);
+      filtered = filtered.filter(
+        (i) => String(i.available) === availabilityFilter
+      );
     }
 
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -51,8 +60,10 @@ const Home = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await getAllItems();
-      setItems(data);
+      const response = await getAllItems();
+      // Handle both old and new API response formats
+      const itemsData = response.items || response;
+      setItems(itemsData);
     } catch (err) {
       setError("Failed to load items");
     } finally {
@@ -84,8 +95,12 @@ const Home = () => {
               <Sparkles className="absolute top-1/2 left-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-blue-600 animate-pulse" />
             </div>
             <div className="text-center space-y-2">
-              <h2 className="heading-classic text-2xl text-slate-900">Loading Amazing Items</h2>
-              <p className="text-elegant">Discovering treasures in your neighborhood...</p>
+              <h2 className="heading-classic text-2xl text-slate-900">
+                Loading Amazing Items
+              </h2>
+              <p className="text-elegant">
+                Discovering treasures in your neighborhood...
+              </p>
             </div>
           </div>
         </div>
@@ -99,7 +114,9 @@ const Home = () => {
         <div className="container mx-auto px-6 py-32 relative z-10">
           <div className="text-center space-y-6">
             <div className="text-6xl mb-4">😞</div>
-            <h2 className="heading-classic text-3xl text-slate-900">Oops! Something went wrong</h2>
+            <h2 className="heading-classic text-3xl text-slate-900">
+              Oops! Something went wrong
+            </h2>
             <p className="text-elegant text-lg max-w-md mx-auto">{error}</p>
             <Button onClick={fetchItems} className="btn-elegant">
               Try Again
@@ -119,17 +136,18 @@ const Home = () => {
             <TrendingUp className="h-4 w-4" />
             <span>Join 2,500+ neighbors sharing resources</span>
           </div>
-          
+
           <h1 className="heading-classic text-5xl md:text-7xl mb-6 text-slate-900">
             Share the{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Abundance
             </span>
           </h1>
-          
+
           <p className="text-elegant text-xl max-w-3xl mx-auto leading-relaxed">
-            Transform your neighborhood into a thriving community where sharing creates abundance. 
-            Discover amazing items nearby, lend what you don't need, and borrow what you do.
+            Transform your neighborhood into a thriving community where sharing
+            creates abundance. Discover amazing items nearby, lend what you
+            don't need, and borrow what you do.
           </p>
         </div>
 
@@ -153,12 +171,17 @@ const Home = () => {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+            <Select
+              value={availabilityFilter}
+              onValueChange={setAvailabilityFilter}
+            >
               <SelectTrigger className="input-classic w-40 h-14">
                 <SelectValue placeholder="All Items" />
               </SelectTrigger>
@@ -174,7 +197,9 @@ const Home = () => {
                 variant={viewMode === "grid" ? "default" : "outline"}
                 size="lg"
                 onClick={() => setViewMode("grid")}
-                className={viewMode === "grid" ? "btn-classic" : "btn-outline-classic"}
+                className={
+                  viewMode === "grid" ? "btn-classic" : "btn-outline-classic"
+                }
               >
                 <Grid className="h-5 w-5" />
               </Button>
@@ -182,7 +207,9 @@ const Home = () => {
                 variant={viewMode === "list" ? "default" : "outline"}
                 size="lg"
                 onClick={() => setViewMode("list")}
-                className={viewMode === "list" ? "btn-classic" : "btn-outline-classic"}
+                className={
+                  viewMode === "list" ? "btn-classic" : "btn-outline-classic"
+                }
               >
                 <List className="h-5 w-5" />
               </Button>
@@ -197,7 +224,8 @@ const Home = () => {
               Available Items
             </h2>
             <p className="text-elegant">
-              {filteredItems.length} wonderful item{filteredItems.length !== 1 ? 's' : ''} waiting to be shared
+              {filteredItems.length} wonderful item
+              {filteredItems.length !== 1 ? "s" : ""} waiting to be shared
             </p>
           </div>
         </div>
@@ -206,11 +234,14 @@ const Home = () => {
         {paginatedItems.length === 0 ? (
           <div className="card-elegant p-16 text-center">
             <div className="text-8xl mb-6">🔍</div>
-            <h3 className="heading-classic text-2xl mb-4 text-slate-900">No Items Found</h3>
+            <h3 className="heading-classic text-2xl mb-4 text-slate-900">
+              No Items Found
+            </h3>
             <p className="text-elegant text-lg mb-8 max-w-md mx-auto">
-              We couldn't find any items matching your search. Try adjusting your filters or explore different categories.
+              We couldn't find any items matching your search. Try adjusting
+              your filters or explore different categories.
             </p>
-            <Button 
+            <Button
               onClick={() => {
                 setSearchTerm("");
                 setCategoryFilter("all");
@@ -242,32 +273,36 @@ const Home = () => {
             <Button
               variant="outline"
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
+              onClick={() => setCurrentPage((p) => p - 1)}
               className="btn-outline-classic"
             >
               Previous
             </Button>
-            
+
             <div className="flex items-center gap-3">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  onClick={() => setCurrentPage(page)}
-                  className={cn(
-                    "w-12 h-12 rounded-xl font-semibold",
-                    currentPage === page ? "btn-classic" : "btn-outline-classic"
-                  )}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      "w-12 h-12 rounded-xl font-semibold",
+                      currentPage === page
+                        ? "btn-classic"
+                        : "btn-outline-classic"
+                    )}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
             </div>
 
             <Button
               variant="outline"
               disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
+              onClick={() => setCurrentPage((p) => p + 1)}
               className="btn-outline-classic"
             >
               Next
