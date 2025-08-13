@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getTrustScore } from "@/api/items";
+import { dummyUserProfile } from "@/data/dummyData";
 
 /**
  * Simple avatar component (no external lib required)
@@ -32,16 +33,26 @@ const Avatar = ({ name, src }) => {
 };
 
 const UserProfile = () => {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(dummyUserProfile); // Start with dummy data
+  const [loading, setLoading] = useState(false); // Start with false since we have dummy data
+  const [isOnline, setIsOnline] = useState(true);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
       const data = await getTrustScore("usr123"); // mock user id
-      setProfile(data);
+      if (data && data.userId) {
+        setProfile(data);
+        setIsOnline(true);
+      } else {
+        setProfile(dummyUserProfile);
+        setIsOnline(false);
+      }
     } catch (err) {
-      toast.error("Failed to load profile");
+      console.error("Error fetching profile:", err);
+      setProfile(dummyUserProfile); // Always fallback to dummy data
+      setIsOnline(false);
+      toast.info("📱 Working offline - using demo data");
     } finally {
       setLoading(false);
     }

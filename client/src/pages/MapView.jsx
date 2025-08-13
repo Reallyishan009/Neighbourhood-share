@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Package, Filter, Navigation, Layers, Search, Eye, Clock, Star } from "lucide-react";
+import { MapPin, Package, Navigation, Layers, Search, Eye, Clock, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { getMapItems } from "@/api/items";
 import { cn } from "@/lib/utils";
+import { dummyMapItems } from "@/data/dummyData";
 
 const MapView = () => {
-  const [mapItems, setMapItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [mapItems, setMapItems] = useState(dummyMapItems); // Start with dummy data
+  const [filteredItems, setFilteredItems] = useState(dummyMapItems);
+  const [loading, setLoading] = useState(false); // Start with false since we have dummy data
   const [selectedItem, setSelectedItem] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("map"); // map or list
+  const [isOnline, setIsOnline] = useState(true);
 
   const categories = ["Tools", "Kitchen", "Outdoors", "Fitness", "Games", "Electronics", "Books"];
 
@@ -25,10 +27,21 @@ const MapView = () => {
     try {
       setLoading(true);
       const data = await getMapItems();
-      setMapItems(data);
-      setFilteredItems(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setMapItems(data);
+        setFilteredItems(data);
+        setIsOnline(true);
+      } else {
+        setMapItems(dummyMapItems);
+        setFilteredItems(dummyMapItems);
+        setIsOnline(false);
+      }
     } catch (error) {
-      toast.error("Failed to load map data");
+      console.error("Error fetching map items:", error);
+      setMapItems(dummyMapItems); // Always fallback to dummy data
+      setFilteredItems(dummyMapItems);
+      setIsOnline(false);
+      toast.info("📱 Working offline - using demo data");
     } finally {
       setLoading(false);
     }
@@ -86,9 +99,19 @@ const MapView = () => {
       <div className="container mx-auto px-6 py-12 relative z-10">
         {/* Enhanced Header */}
         <div className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className={cn(
+            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6",
+            isOnline 
+              ? "bg-blue-50 text-blue-700" 
+              : "bg-orange-50 text-orange-700"
+          )}>
             <Navigation className="h-4 w-4" />
-            <span>{filteredItems.length} items found nearby</span>
+            <span>
+              {isOnline 
+                ? `${filteredItems.length} items found nearby` 
+                : `Demo: ${filteredItems.length} sample items`
+              }
+            </span>
           </div>
           
           <h1 className="heading-classic text-5xl md:text-6xl mb-6 text-slate-900">

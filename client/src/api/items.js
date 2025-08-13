@@ -1,6 +1,6 @@
 import apiClient from "@/lib/axios";
 
-// Items API with fallback
+// Items API with comprehensive fallback
 export const getAllItems = async () => {
   try {
     const { data } = await apiClient.get("/items");
@@ -13,26 +13,8 @@ export const getAllItems = async () => {
       const { data } = await apiClient.get("/items/simple");
       return data;
     } catch (fallbackError) {
-      console.error('Fallback endpoint also failed:', fallbackError);
-      
-      // If both fail, try to return mock data for development
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Using mock data due to API failure');
-        return [
-          {
-            id: "itm001",
-            name: "Cordless Drill",
-            description: "18V cordless drill, lightly used.",
-            category: "Tools",
-            owner: "Alice Johnson",
-            condition: "Good",
-            available: true,
-            image: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&h=300&fit=crop",
-            borrowedBy: null
-          }
-        ];
-      }
-      
+      console.error('All API endpoints failed:', fallbackError);
+      // Always throw to let components handle with their own dummy data
       throw fallbackError;
     }
   }
@@ -55,8 +37,13 @@ export const requestBorrow = async (itemId, userData) => {
 
 // Bonus APIs
 export const getMyRequests = async () => {
-  const { data } = await apiClient.get("/my-requests");
-  return data;
+  try {
+    const { data } = await apiClient.get("/my-requests");
+    return data;
+  } catch (error) {
+    console.error('My requests endpoint failed:', error);
+    throw error; // Let components handle with dummy data
+  }
 };
 
 export const cancelRequest = async (requestId) => {
@@ -65,11 +52,21 @@ export const cancelRequest = async (requestId) => {
 };
 
 export const getMapItems = async () => {
-  const { data } = await apiClient.get("/map-items");
-  return data;
+  try {
+    const { data } = await apiClient.get("/map-items");
+    return data;
+  } catch (error) {
+    console.error('Map items endpoint failed:', error);
+    throw error; // Let components handle with dummy data
+  }
 };
 
 export const getTrustScore = async (userId) => {
-  const { data } = await apiClient.get(`/trust-score/${userId}`);
-  return data;
+  try {
+    const { data } = await apiClient.get(`/trust-score/${userId}`);
+    return data;
+  } catch (error) {
+    console.error('Trust score endpoint failed:', error);
+    throw error; // Let components handle with dummy data
+  }
 };

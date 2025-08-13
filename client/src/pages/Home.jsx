@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Grid, List, Filter, Sparkles, TrendingUp } from "lucide-react";
+import { Search, Grid, List, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,16 +13,18 @@ import ItemCard from "@/components/ItemCard";
 import { getAllItems, requestBorrow } from "@/api/items";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dummyItems } from "@/data/dummyData";
 
 const Home = () => {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState(dummyItems); // Start with dummy data
+  const [loading, setLoading] = useState(false); // Start with false since we have dummy data
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isOnline, setIsOnline] = useState(true);
 
   const itemsPerPage = 6;
   const categories = ["Tools", "Kitchen", "Outdoors", "Fitness", "Games"];
@@ -61,38 +63,62 @@ const Home = () => {
     try {
       setLoading(true);
       setError(""); // Clear any previous errors
-      const response = await getAllItems();
-      console.log('API Response:', response); // Debug log
       
+      const response = await getAllItems();
+      console.log("API Response:", response); // Debug log
+
       // Handle both old and new API response formats
       const itemsData = response.items || response;
-      console.log('Items Data:', itemsData); // Debug log
-      
-      if (Array.isArray(itemsData)) {
+      console.log("Items Data:", itemsData); // Debug log
+
+      if (Array.isArray(itemsData) && itemsData.length > 0) {
         setItems(itemsData);
+        setIsOnline(true);
+        toast.success("✨ Items loaded from server!");
       } else {
-        console.error('Invalid items data format:', itemsData);
-        setError("Invalid data format received from server");
+        console.warn("No items from server, using dummy data");
+        setItems(dummyItems);
+        setIsOnline(false);
+        toast.info("📱 Using offline data - some features may be limited");
       }
     } catch (err) {
-      console.error('Error fetching items:', err);
-      setError(`Failed to load items: ${err.message || 'Unknown error'}`);
+      console.error("Error fetching items:", err);
+      setItems(dummyItems); // Always fallback to dummy data
+      setIsOnline(false);
+      setError(""); // Don't show error since we have fallback data
+      toast.info("📱 Working offline - using demo data");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRequestBorrow = async (itemId) => {
+    if (!isOnline) {
+      toast.info("📱 Demo mode - Request would be sent in real app!");
+      // Simulate request in demo mode
+      const item = items.find(i => i.id === itemId);
+      if (item) {
+        toast.success(`✨ Demo: Request sent for "${item.name}"!`);
+      }
+      return;
+    }
+
     try {
       await requestBorrow(itemId, { userId: "usr123" });
       toast.success("Request sent successfully! 🎉");
       fetchItems();
     } catch (err) {
-      toast.error("Could not send request");
+      toast.error("Could not send request - working in demo mode");
+      // Still show success for demo purposes
+      const item = items.find(i => i.id === itemId);
+      if (item) {
+        toast.success(`✨ Demo: Request sent for "${item.name}"!`);
+      }
     }
   };
 
   useEffect(() => {
+    // Try to fetch from API, but don't block the UI
     fetchItems();
   }, []);
 
@@ -143,9 +169,19 @@ const Home = () => {
       <div className="container mx-auto px-6 py-12 relative z-10">
         {/* Elegant Hero Section */}
         <div className="text-center mb-16 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className={cn(
+            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6",
+            isOnline 
+              ? "bg-blue-50 text-blue-700" 
+              : "bg-orange-50 text-orange-700"
+          )}>
             <TrendingUp className="h-4 w-4" />
-            <span>Join 2,500+ neighbors sharing resources</span>
+            <span>
+              {isOnline 
+                ? "Join 2,500+ neighbors sharing resources" 
+                : "Demo Mode - Explore the features!"
+              }
+            </span>
           </div>
 
           <h1 className="heading-classic text-5xl md:text-7xl mb-6 text-slate-900">

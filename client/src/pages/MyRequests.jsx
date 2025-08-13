@@ -6,30 +6,50 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getMyRequests, cancelRequest } from "@/api/items";
 import { cn } from "@/lib/utils";
+import { dummyRequests } from "@/data/dummyData";
 
 const MyRequests = () => {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState(dummyRequests); // Start with dummy data
+  const [loading, setLoading] = useState(false); // Start with false since we have dummy data
+  const [isOnline, setIsOnline] = useState(true);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const data = await getMyRequests();
-      setRequests(data);
+      if (Array.isArray(data) && data.length >= 0) {
+        setRequests(data);
+        setIsOnline(true);
+      } else {
+        setRequests(dummyRequests);
+        setIsOnline(false);
+      }
     } catch (error) {
-      toast.error("Failed to load requests");
+      console.error("Error fetching requests:", error);
+      setRequests(dummyRequests); // Always fallback to dummy data
+      setIsOnline(false);
+      toast.info("📱 Working offline - using demo data");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancelRequest = async (requestId) => {
+    if (!isOnline) {
+      // Demo mode - simulate cancellation
+      setRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.success("✨ Demo: Request cancelled!");
+      return;
+    }
+
     try {
       await cancelRequest(requestId);
       toast.success("Request cancelled");
       fetchRequests();
     } catch (error) {
-      toast.error("Failed to cancel request");
+      // Fallback to demo mode
+      setRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.success("✨ Demo: Request cancelled!");
     }
   };
 
@@ -79,9 +99,19 @@ const MyRequests = () => {
       <div className="container mx-auto px-6 py-12 relative z-10">
         {/* Enhanced Header */}
         <div className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className={cn(
+            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6",
+            isOnline 
+              ? "bg-indigo-50 text-indigo-700" 
+              : "bg-orange-50 text-orange-700"
+          )}>
             <TrendingUp className="h-4 w-4" />
-            <span>{requests.length} active request{requests.length !== 1 ? 's' : ''}</span>
+            <span>
+              {isOnline 
+                ? `${requests.length} active request${requests.length !== 1 ? 's' : ''}` 
+                : `Demo: ${requests.length} sample request${requests.length !== 1 ? 's' : ''}`
+              }
+            </span>
           </div>
           
           <h1 className="heading-classic text-5xl md:text-6xl mb-6 text-slate-900">
